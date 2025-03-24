@@ -15,12 +15,12 @@ def readdataset2d(fname):
 #%% Import du jeu de données d'entrainement
 X_train, T_train = readdataset2d("nuage_exercice_1")
 N, D = X_train.shape
-plt.scatter(X_train[:,0], X_train[:,1], c=T_train, s = 10)
+# plt.scatter(X_train[:,0], X_train[:,1], c=T_train, s = 10)
 
 #%% Import du jeu de données de test
 X_test, T_test = readdataset2d("nuage_test_exercice_1")
 N, D = X_test.shape
-plt.scatter(X_test[:,0], X_test[:,1], c=T_test, s = 10)
+# plt.scatter(X_test[:,0], X_test[:,1], c=T_test, s = 10)
 
 # %%
 # 1. Implémentation du réseau
@@ -51,13 +51,10 @@ def cross_entropy(Y,T):
     return J
 
 
-def get_parameter_dimensions(dimensions: list, parameter_indice: int) -> tuple:
-    return (dimensions[parameter_indice], dimensions[parameter_indice + 1])
-
 def create_parameters(dimensions: list) -> list:
     parameters = []
     for indice in range(len(dimensions) - 1):
-        W = np.random.uniform(-2, 2, size=get_parameter_dimensions(dimensions, indice))
+        W = np.random.uniform(-2, 2, size = (dimensions[indice], dimensions[indice + 1]))
         # b de dimension (1, dimensions[indice+1])
         b = np.random.randn(1, dimensions[indice+1])
         parameters.append((W, b))
@@ -102,19 +99,91 @@ def updateW(X: np.array, parameters: list, datas: list, T: np.array, lr: float):
 
 
 
-def reseau(X: np.array, parameters: list, datas: list, T: np.array, lr = 0.001, nb_iter = 10000, int_affiche = 10):
+def reseau(X: np.array, parameters: list, datas: list, T: np.array, lr = 0.001, nb_iter = 10000, int_affiche = 100, quiet = False):
     Y = datas[-1]
     suite_erreur = [cross_entropy(Y,T)]
+    suite_precision = [taux_precision(predit_classe(Y), T)]
     for i in range(nb_iter):
         updateW(X, parameters, datas, T, lr)
         datas[:] = get_datas_from_parameters(parameters)[:]
         Y = datas[-1]
         if i % int_affiche == 0:
             erreur_iter = cross_entropy(Y, T)
-            print("Erreur cross_entropy a l'iteration ", i+1 ," : " , erreur_iter)
+            precision_iter = taux_precision(predit_classe(Y), T)
+            if not quiet:
+                print("Erreur cross_entropy a l'iteration ", i+1 ," : " , erreur_iter)
             suite_erreur.append(erreur_iter)
-    return suite_erreur
+            suite_precision.append(precision_iter)
+    return suite_erreur, suite_precision
 
-dimensions1 = [2,5,4,4,4,4,1]
-parameters, datas, C_train = initialise(dimensions1)
-reseau(X_train, parameters, datas, T_train)
+dimensions = [2, 15, 15, 3, 1]
+parameters, datas, C_train_init = initialise(dimensions)
+# suite_erreur, suite_precision = reseau(X_train, parameters, datas, T_train)
+C_train_final = predit_classe(datas[-1])
+
+
+def affichage_fonction_erreur(suite_erreur: list, label= 'Erreur de cross entropy', couleur = 'blue'):
+    n = len(suite_erreur)
+    X = np.arange(0, n)
+    fig,ax = plt.subplots()
+    ax.plot(X, suite_erreur , color = couleur, label = label)
+    plt.title("Cross entropy Error")
+    plt.xlabel("Iterations")
+    plt.ylabel("Error")
+    plt.legend()
+    plt.show()
+
+def affichage_fonction_precision(suite_precision: list, label, couleur = "blue"):
+    n = len(suite_precision)
+    X = np.arange(0, n)
+    fig,ax = plt.subplots()
+    ax.plot(X, suite_precision , color = couleur, label = label)
+    plt.title("taux de precision")
+    plt.xlabel("Iterations")
+    plt.ylabel("taux")
+    plt.legend()
+    plt.show()
+
+def get_lr_modulation_array(alpha_min: int, alpha_max: int, nbr_of_element: int, to_display = "error") -> np.array:
+    lr_values = np.linspace(alpha_min, alpha_max, nbr_of_element)
+    if to_display == "error":
+        liste_xn = [(reseau(X_train, parameters, datas, T_train, lr, nb_iter = 10000, int_affiche = 100, quiet = True)[0], lr) for lr in lr_values]
+    if to_display == "precision":
+        liste_xn = [(reseau(X_train, parameters, datas, T_train, lr, nb_iter = 10000, int_affiche = 100, quiet = True)[1], lr) for lr in lr_values]
+    return liste_xn
+
+def affiche_multiple(liste_xn: list, to_display = "error", learning_rate_modulation = False , cmap='viridis'):
+    n_points = len(liste_xn[0][0]) if learning_rate_modulation else len(liste_xn[0])
+    X = np.arange(0, n_points)
+    fig, ax = plt.subplots(figsize=(8, 6))
+    
+    # Nombre de courbes à tracer
+    n_curves = len(liste_xn)
+    # Récupération d'une colormap avec n_curves couleurs distinctes
+    colors = plt.cm.get_cmap(cmap, n_curves)
+    # Tracer chaque courbe avec une couleur issue de la colormap
+    if learning_rate_modulation:
+        for i, xn in enumerate(liste_xn):
+            curve_to_display, lr = xn
+            ax.plot(X, curve_to_display, color=colors(i), label=f'Learning rate: {lr}')
+    else:
+        for i, xn in enumerate(liste_xn):
+            ax.plot(X, xn, color=colors(i), label=f'Curve: {i + 1}')            
+    if to_display == "error":
+        ax.set_xlabel("Itérations")
+        ax.set_ylabel("Entropy error")
+        ax.set_title("Error comparison for different learning rate values")
+        ax.legend()
+    if to_display == "precision":
+        ax.set_title("taux de precision")
+        ax.set_xlabel("Iterations")
+        ax.set_ylabel("taux de precision")
+        ax.legend()
+    plt.show()
+
+
+
+
+# affichage_fonction_erreur(suite_erreur, label = f'Architecture {dimensions}')
+# affichage_fonction_precision(suite_precision, label= f'Architecture {dimensions}')
+affiche_multiple(get_lr_modulation_array(0.0005, 0.001, 3, "error"), "error", true)
