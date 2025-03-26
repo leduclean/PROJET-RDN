@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt 
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+from display import affichage_fonction_erreur, affichage_fonction_precision
 
 #%% Introduction : Lecture des jeux de données fournis 
 def readdataset2d(fname):
@@ -116,44 +118,45 @@ def reseau(X: np.array, parameters: list, datas: list, T: np.array, lr = 0.001, 
             suite_precision.append(precision_iter)
     return suite_erreur, suite_precision
 
+
+
+
 dimensions = [2, 15, 15, 3, 1]
 parameters, datas, C_train_init = initialise(dimensions)
-# suite_erreur, suite_precision = reseau(X_train, parameters, datas, T_train)
+suite_erreur, suite_precision = reseau(X_train, parameters, datas, T_train)
 C_train_final = predit_classe(datas[-1])
 
-
-def affichage_fonction_erreur(suite_erreur: list, label= 'Erreur de cross entropy', couleur = 'blue'):
-    n = len(suite_erreur)
-    X = np.arange(0, n)
-    fig,ax = plt.subplots()
-    ax.plot(X, suite_erreur , color = couleur, label = label)
-    plt.title("Cross entropy Error")
-    plt.xlabel("Iterations")
-    plt.ylabel("Error")
-    plt.legend()
-    plt.show()
-
-def affichage_fonction_precision(suite_precision: list, label, couleur = "blue"):
-    n = len(suite_precision)
-    X = np.arange(0, n)
-    fig,ax = plt.subplots()
-    ax.plot(X, suite_precision , color = couleur, label = label)
-    plt.title("taux de precision")
-    plt.xlabel("Iterations")
-    plt.ylabel("taux")
-    plt.legend()
-    plt.show()
 
 def get_lr_modulation_array(alpha_min: int, alpha_max: int, nbr_of_element: int, to_display = "error") -> np.array:
     lr_values = np.linspace(alpha_min, alpha_max, nbr_of_element)
     if to_display == "error":
-        liste_xn = [(reseau(X_train, parameters, datas, T_train, lr, nb_iter = 10000, int_affiche = 100, quiet = True)[0], lr) for lr in lr_values]
+        liste_xn = [(reseau(X_train, parameters, datas, T_train, lr,  quiet = True)[0], lr) for lr in lr_values]
     if to_display == "precision":
-        liste_xn = [(reseau(X_train, parameters, datas, T_train, lr, nb_iter = 10000, int_affiche = 100, quiet = True)[1], lr) for lr in lr_values]
+        liste_xn = [(reseau(X_train, parameters, datas, T_train, lr,  quiet = True)[1], lr) for lr in lr_values]
     return liste_xn
 
+DIMENSIONS = [
+    [2, 3, 3, 1],
+    [2, 7, 7, 7, 1],
+    [2, 15, 15, 1],
+    [2, 3, 15, 15, 1],
+    [2, 15, 15, 3, 1],
+    [2, 40, 1],
+    [2, 20, 20, 1],
+    [2, 5, 4, 4, 4 ,4, 1]
+]
+
+def get_curve_array_from_dimension(list_of_dimensions: list):
+    curves_array = []
+    for dimension in list_of_dimensions :
+        parameters, datas, _ = initialise(dimension)
+        suite_erreur, suite_precision = reseau(X_train, parameters, datas, T_train, quiet = True)
+        curves_array.append((suite_erreur, suite_precision))
+    return curves_array
+        
+
 def affiche_multiple(liste_xn: list, to_display = "error", learning_rate_modulation = False , cmap='viridis'):
-    n_points = len(liste_xn[0][0]) if learning_rate_modulation else len(liste_xn[0])
+    n_points = len(liste_xn[0][0]) 
     X = np.arange(0, n_points)
     fig, ax = plt.subplots(figsize=(8, 6))
     
@@ -168,7 +171,7 @@ def affiche_multiple(liste_xn: list, to_display = "error", learning_rate_modulat
             ax.plot(X, curve_to_display, color=colors(i), label=f'Learning rate: {lr}')
     else:
         for i, xn in enumerate(liste_xn):
-            ax.plot(X, xn, color=colors(i), label=f'Curve: {i + 1}')            
+            ax.plot(X, xn[0] if to_display == "error" else xn[1], color=colors(i), label=f'Curve: {i + 1}')            
     if to_display == "error":
         ax.set_xlabel("Itérations")
         ax.set_ylabel("Entropy error")
@@ -182,8 +185,8 @@ def affiche_multiple(liste_xn: list, to_display = "error", learning_rate_modulat
     plt.show()
 
 
-
+affiche_multiple(get_curve_array_from_dimension(DIMENSIONS))
 
 # affichage_fonction_erreur(suite_erreur, label = f'Architecture {dimensions}')
 # affichage_fonction_precision(suite_precision, label= f'Architecture {dimensions}')
-affiche_multiple(get_lr_modulation_array(0.0005, 0.001, 3, "error"), "error", true)
+# affiche_multiple(get_lr_modulation_array(0.0005, 0.001, 3, "error"), "error", True)
