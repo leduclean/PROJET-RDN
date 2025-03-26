@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from display import affichage_fonction_erreur, affichage_fonction_precision
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+#from display import affichage_fonction_erreur, affichage_fonction_precision
 
 #%% Introduction : Lecture des jeux de données fournis 
 def readdataset2d(fname):
@@ -15,12 +15,12 @@ def readdataset2d(fname):
     return np.array(X), T
 
 #%% Import du jeu de données d'entrainement
-X_train, T_train = readdataset2d("nuage_exercice_1")
+X_train, T_train = readdataset2d("exercice1/nuage_exercice_1")
 N, D = X_train.shape
 # plt.scatter(X_train[:,0], X_train[:,1], c=T_train, s = 10)
 
 #%% Import du jeu de données de test
-X_test, T_test = readdataset2d("nuage_test_exercice_1")
+X_test, T_test = readdataset2d("exercice1/nuage_test_exercice_1")
 N, D = X_test.shape
 # plt.scatter(X_test[:,0], X_test[:,1], c=T_test, s = 10)
 
@@ -51,7 +51,6 @@ def cross_entropy(Y,T):
             else :
                 J -= np.log(1-Y[i])
     return J
-
 
 def create_parameters(dimensions: list) -> list:
     parameters = []
@@ -134,7 +133,7 @@ def get_lr_modulation_array(alpha_min: int, alpha_max: int, nbr_of_element: int,
     if to_display == "precision":
         liste_xn = [(reseau(X_train, parameters, datas, T_train, lr,  quiet = True)[1], lr) for lr in lr_values]
     return liste_xn
-
+#%% Question 2
 DIMENSIONS = [
     [2, 3, 3, 1],
     [2, 7, 7, 7, 1],
@@ -146,13 +145,28 @@ DIMENSIONS = [
     [2, 5, 4, 4, 4 ,4, 1]
 ]
 
-def get_curve_array_from_dimension(list_of_dimensions: list):
+def get_curve_array_from_dimension(list_of_dimensions: list, verif = True):
+    
+        
     curves_array = []
+    
+    #Si on veut tester juste avec une seule liste de dimension et pas une liste de liste de dimensions
+    if verif == False :
+        dimension = list_of_dimensions
+        parameters,datas, _ = initialise(dimension)
+        suite_erreur, suite_precision = reseau(X_train, parameters, datas, T_train, quiet = True)
+        curves_array.append((suite_erreur, suite_precision))
+        return curves_array
+    
     for dimension in list_of_dimensions :
         parameters, datas, _ = initialise(dimension)
         suite_erreur, suite_precision = reseau(X_train, parameters, datas, T_train, quiet = True)
         curves_array.append((suite_erreur, suite_precision))
     return curves_array
+
+
+#On comprend rien à l'affichage ptetre faire une fonction affiche pour comprendre les données
+print(get_curve_array_from_dimension(DIMENSIONS[0], False))
         
 
 def affiche_multiple(liste_xn: list, to_display = "error", learning_rate_modulation = False , cmap='viridis'):
@@ -185,8 +199,9 @@ def affiche_multiple(liste_xn: list, to_display = "error", learning_rate_modulat
     plt.show()
 
 
-affiche_multiple(get_curve_array_from_dimension(DIMENSIONS))
+#affiche_multiple(get_curve_array_from_dimension(DIMENSIONS))
 
 # affichage_fonction_erreur(suite_erreur, label = f'Architecture {dimensions}')
 # affichage_fonction_precision(suite_precision, label= f'Architecture {dimensions}')
 # affiche_multiple(get_lr_modulation_array(0.0005, 0.001, 3, "error"), "error", True)
+# %%

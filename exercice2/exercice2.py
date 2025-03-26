@@ -5,13 +5,20 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from display import affichage_fonction_erreur, affichage_fonction_precision
 
+#%% Question 1
+"""
+
+Si on cherche à minimiser J, alors on cherche à maximiser les probabilités y_{nk}\in [0,1] car ln(1) = 0 alors que si y_{nk} proche de 0
+ln(y_{nk}) devient très petit.
+Ce qui veut dire qu'on cherche la plus grande probabibilité de y_{nk}, donc la plus grande probabilité à réaliser une bonne classification
+"""
 #%% Introduction : Lecture des jeux de données fournis 
 def readdataset2d(fname):
     with open(fname, "r") as file:
         X, T = [], []
         for l in file:
             x = l.strip().split()
-            # print(x)
+            # print("x: ",x)
             X.append((float(x[0]), float(x[1])))
             T.append(int(x[2]))
         T = np.reshape(np.array(T), (-1,1)) 
@@ -21,10 +28,10 @@ def readdataset2d(fname):
 def convertit(T: np.array, K: int) -> np.array:
     new_T = np.zeros((len(T), K))  
     for i, classification in enumerate(T):
-            new_T[i, classification - 1] = 1 
+        new_T[i, classification - 1] = 1 
     return new_T
 
-# print(convertit(np.array([1,2]), 2))
+#print(convertit(np.array([1,2]), 2))
 
 def softmax(A: np.array) -> np.array:
     B = []
@@ -94,10 +101,41 @@ def regression_logistique(W, b, X, Y, T, lr=0.1, nb_iter=1000, int_affiche=100, 
 
 
 
-#%% Import du jeu de données : probleme à 4 classes
-X_train, T_train = readdataset2d("probleme_4_classes")
+# #%% Import du jeu de données : probleme à 4 classes
+# X_train, T_train = readdataset2d("exercice2/probleme_4_classes")
+# N, D = X_train.shape
+# K = 4
+# # Pour la visualisation, on garde T_train sous sa forme originelle
+# plt.scatter(X_train[:,0], X_train[:,1], c=T_train, s = 30)
+# # plt.show()
+# W, b, Y_train, C_train_init = initialise(D, K)
+# T_train = convertit(T_train, K)
+# W_init = W.copy()
+# b_init = b.copy()
+# affichage_fonction_erreur(regression_logistique(W, b, X_train, Y_train, T_train, lr=0.01))
+
+
+# #%% Import du jeu de données : probleme à 5 classes
+
+# X_train, T_train = readdataset2d("exercice2/probleme_5_classes")
+# N, D = X_train.shape
+# K = 5 #5 classes
+
+# # Pour la visualisation, on garde T_train sous sa forme originelle
+# plt.scatter(X_train[:,0], X_train[:,1], c=T_train, s = 30)
+# # plt.show()
+# W, b, Y_train, C_train_init = initialise(D, K)
+# T_train = convertit(T_train, K)
+# W_init = W.copy()
+# b_init = b.copy()
+# affichage_fonction_erreur(regression_logistique(W, b, X_train, Y_train, T_train, lr=0.01))
+
+
+#%% Import du jeu de données : probleme à 6 classes (mais c'est devenu 5 d'apres le prof)
+X_train, T_train = readdataset2d("exercice2/probleme_6_classes")
 N, D = X_train.shape
-K = 4
+K = 5 # Le prof a dis que c'était 5 classes au final
+
 # Pour la visualisation, on garde T_train sous sa forme originelle
 plt.scatter(X_train[:,0], X_train[:,1], c=T_train, s = 30)
 # plt.show()
@@ -106,20 +144,8 @@ T_train = convertit(T_train, K)
 W_init = W.copy()
 b_init = b.copy()
 affichage_fonction_erreur(regression_logistique(W, b, X_train, Y_train, T_train, lr=0.01))
-# #%% Import du jeu de données : probleme à 5 classes
-# X_train, T_train = readdataset2d("probleme_5_classes")
-# N, D = X_train.shape
 
-# # Pour la visualisation, on garde T_train sous sa forme originelle
-# plt.scatter(X_train[:,0], X_train[:,1], c=T_train, s = 30)
-# # plt.show()
-
-#%% Import du jeu de données : probleme à 6 classes
-X_train, T_train = readdataset2d("probleme_6_classes")
-N, D = X_train.shape
-K = 6
-
-# Pour la visualisation, on garde T_train sous sa forme originelle
-plt.scatter(X_train[:,0], X_train[:,1], c=T_train, s = 30)
-# plt.show()
-
+#%% A FAIRE :: OPTIMISER LE RDN pour le probleme à 6 classes
+# Comme on voit bien que juste la ligne c'est pas assez pour bien separer les differentes classes on va 
+#faire comme avant avec les reseaux denses à p couches intermediaires
+# Ducoup on va faire comme l'exercice 1.
