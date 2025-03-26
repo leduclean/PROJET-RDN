@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from display import affichage_fonction_erreur, affichage_fonction_precision
+from display import *
+from exercice1 import *
 
 #%% Question 1
 """
-
 Si on cherche à minimiser J, alors on cherche à maximiser les probabilités y_{nk}\in [0,1] car ln(1) = 0 alors que si y_{nk} proche de 0
 ln(y_{nk}) devient très petit.
 Ce qui veut dire qu'on cherche la plus grande probabibilité de y_{nk}, donc la plus grande probabilité à réaliser une bonne classification
@@ -83,7 +83,7 @@ def taux_precision(C: np.array, T: np.array):
             well_classified += 1
     return well_classified*100/N
 
-def regression_logistique(W, b, X, Y, T, lr=0.1, nb_iter=1000, int_affiche=100, quiet = False ):
+def regression_logistique(W, b, X, Y, T, lr=0.1, nb_iter=10000, int_affiche=100, quiet = False ):
     suite_erreur = [cross_entropy(Y,T)]
     suite_precision = [taux_precision(predit_classe(Y, K), T)]
     for i in range(nb_iter):
@@ -98,11 +98,20 @@ def regression_logistique(W, b, X, Y, T, lr=0.1, nb_iter=1000, int_affiche=100, 
             suite_precision.append(precision_iter)
     return suite_erreur
 
+def taux_precision(C: np.array, T: np.array):
+    true_labels = np.argmax(T, axis=1)
+    predicted_labels = np.argmax(C, axis=1)
+    
+    # Calcul du taux de précision
+    accuracy = np.mean(true_labels == predicted_labels)
+    
+    return accuracy
+
 
 
 
 # #%% Import du jeu de données : probleme à 4 classes
-# X_train, T_train = readdataset2d("exercice2/probleme_4_classes")
+# X_train, T_train = readdataset2d("probleme_4_classes")
 # N, D = X_train.shape
 # K = 4
 # # Pour la visualisation, on garde T_train sous sa forme originelle
@@ -117,9 +126,25 @@ def regression_logistique(W, b, X, Y, T, lr=0.1, nb_iter=1000, int_affiche=100, 
 
 # #%% Import du jeu de données : probleme à 5 classes
 
-# X_train, T_train = readdataset2d("exercice2/probleme_5_classes")
+X_train, T_train = readdataset2d("probleme_5_classes")
+N, D = X_train.shape
+K = 5 #5 classes
+T_conserve = T_train.copy()
+# Pour la visualisation, on garde T_train sous sa forme originelle
+# plt.scatter(X_train[:,0], X_train[:,1], c=T_train, s = 30)
+W, b, Y_train, C_train_init = initialise(D, K)
+T_train = convertit(T_train, K)
+W_init = W.copy()
+b_init = b.copy()
+affichage_fonction_erreur(regression_logistique(W, b, X_train, Y_train, T_train, 0.05, 1000, 100))
+display_datas_and_separation(W, b, X_train, T_conserve)
+C_final = predit_classe(Y_train, K)
+print(taux_precision(C_final, T_train))
+
+#%% Import du jeu de données : probleme à 6 classes (mais c'est devenu 5 d'apres le prof)
+# X_train, T_train = readdataset2d("probleme_6_classes")
 # N, D = X_train.shape
-# K = 5 #5 classes
+# K = 5 # Le prof a dis que c'était 5 classes au final
 
 # # Pour la visualisation, on garde T_train sous sa forme originelle
 # plt.scatter(X_train[:,0], X_train[:,1], c=T_train, s = 30)
@@ -129,21 +154,6 @@ def regression_logistique(W, b, X, Y, T, lr=0.1, nb_iter=1000, int_affiche=100, 
 # W_init = W.copy()
 # b_init = b.copy()
 # affichage_fonction_erreur(regression_logistique(W, b, X_train, Y_train, T_train, lr=0.01))
-
-
-#%% Import du jeu de données : probleme à 6 classes (mais c'est devenu 5 d'apres le prof)
-X_train, T_train = readdataset2d("exercice2/probleme_6_classes")
-N, D = X_train.shape
-K = 5 # Le prof a dis que c'était 5 classes au final
-
-# Pour la visualisation, on garde T_train sous sa forme originelle
-plt.scatter(X_train[:,0], X_train[:,1], c=T_train, s = 30)
-# plt.show()
-W, b, Y_train, C_train_init = initialise(D, K)
-T_train = convertit(T_train, K)
-W_init = W.copy()
-b_init = b.copy()
-affichage_fonction_erreur(regression_logistique(W, b, X_train, Y_train, T_train, lr=0.01))
 
 #%% A FAIRE :: OPTIMISER LE RDN pour le probleme à 6 classes
 # Comme on voit bien que juste la ligne c'est pas assez pour bien separer les differentes classes on va 
