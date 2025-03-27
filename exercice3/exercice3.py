@@ -34,10 +34,55 @@ def affiche_trois_images(img1, img2, img3):
 affiche_image(X)
 
 #%% Exercice 1 : Pooling : Max, Moyen et Median
+import numpy as np
 
-def pooling_max(X,ratio_x,ratio_y):
+def get_bloc_values(X: np.array, ratio_x: int, ratio_y: int) -> np.array:
+  # On assure un type float pour pouvoir utiliser np.nan
+  X = X.astype(float)
+    
+  l, c = X.shape  # Dimensions originales
+  # Calculer le nombre de lignes/colonnes à compléter
+  reste_l = l % ratio_x
+  reste_c = c % ratio_y
+  new_l = l if reste_l == 0 else l + (ratio_x - reste_l)
+  new_c = c if reste_c == 0 else c + (ratio_y - reste_c)
+  # Création de la matrice remplie avec np.nan (valeur qu'on pourra ensuite ignorer facilement)
+  X_padded = np.full((new_l, new_c), np.nan, dtype=float)
+  X_padded[:l, :c] = X  
+  # Découpe en blocs de taille (ratio_x, ratio_y)
+  blocs = X_padded.reshape(new_l // ratio_x, ratio_x, new_c // ratio_y, ratio_y).swapaxes(1, 2)
+  return blocs
+
+# Pour les fonctions qui suivent, 
+# axis = (2,3) pusique tableau de la forme (n_blocs_lignes, n_blocs_colonnes, ratio_x, ratio_y)
+
+def pooling_max(X: np.array, ratio_x: int, ratio_y: int) -> np.array:
+  blocs = get_bloc_values(X, ratio_x, ratio_y)
+  # Calcul du max en ignorant les np.nan
+  Y = np.nanmax(blocs, axis=(2, 3)) 
+  return Y
+
+     
+def pooling_moy(X: np.array, ratio_x: int, ratio_y: int) -> np.array:
+  blocs = get_bloc_values(X, ratio_x, ratio_y)
+  # Calcul moyenne en ignorant les np.nan
+  Y = np.nanmean(blocs, axis=(2, 3))
+  return Y
   
-  return
+
+def pooling_median(X: np.array, ratio_x: int, ratio_y: int) -> np.array:
+  blocs = get_bloc_values(X, ratio_x, ratio_y)
+  # Calcul medianne en ignorant les np.nan
+  Y = np.nanmedian(blocs, axis=(2, 3))
+  return Y
+
+
+X_max = pooling_max(X, 120, 107)
+X_moy = pooling_moy(X, 120, 107)
+X_median = pooling_median(X, 120, 107)
+
+affiche_trois_images(X_max, X_moy, X_median)
+plt.show()
 
 #%% Exercice 2 : Convolution
 # Definitions des donnees
