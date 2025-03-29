@@ -280,36 +280,140 @@ print("Convolution X_1*F_1 : ", convolution1D_stride(X_1, F_1, 2))  # [80, 20, 1
 
 # %% Exercice 2 : Convolution 2D
 
+def cross_correlation2D(X,F):
+    Dx, Dy = X.shape
+    Hx, Hy, = F.shape
+    
+    liste_return = []
+    for i in range(Dx-Hx+1):
+        ligne = []
+        for j in range(Dy-Hy+1):
+            
+            somme = 0
+            
+            for ip in range(Hx):
+                for jp in range(Hy):
+                    
+                    somme +=X[i+ip][j+jp]*F[ip][jp]
+                    
+            ligne.append(somme)
+            
+        liste_return.append(ligne)
+    
+    return liste_return
+
+def applique_filtre(X_old,F):
+    X_new = cross_correlation2D(X_old,F)
+    affiche_deux_images(X_old, X_new)
+    return
+    
 
 # %% Filtres à tester sur l'image X_pool qui est obtenue par pooling sur l'image
 ### X originale
 
+X = np.asarray(image)
+#X_pool = pooling_max(X, 120, 107)
+X_pool = pooling_mean(X, 120, 107)
+#X_pool = pooling_median(X,120,107)
+
+
+
+#%% Filtre 1
+# Ce filtre remplace chaque pixel par la moyenne de son voisinage sur une plage 5 par 5
+# Ducoup ca devient flou
+# meme si la somme des termes de filtre_1 ne vaut pas 1, il n'y a pourtant pas d'assombrissement car matplotlib normalise les valeurs de l'image
 s = 5
 filtre_1 = np.ones((s, s)) / 100
+print(filtre_1)
 
+print("Filtre 1")
+applique_filtre(X_pool, filtre_1)
+plt.show()
+
+#%% Filtre 2
+# Comme le filtre d'avant, il remplace chaque pixel par la moyenne de son voisinage mais ici, le centre a une plus grande valeur comme
+# la fonction gaussienne en probabilité, ducoup le flou preserve mieux les contours
 filtre_2 = np.array(
     [[0.0625, 0.125, 0.0625], [0.125, 0.25, 0.125], [0.0625, 0.125, 0.0625]]
 )
 
+print("Filtre 2")
+applique_filtre(X_pool, filtre_2)
+plt.show()
+
+#%% Filtre 3
+# Ici il y a des valeurs négatives et positives. Ce qui va mettre en avant les variations verticales de l'image en les assombrissant
+# Dans l'exemple de l'image les plus grandes variations verticales sont celles des toits, qui sont bien noir dans la representation
 filtre_3 = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+
+print("Filtre 3")
+applique_filtre(X_pool, filtre_3)
+plt.show()
+
+#%% Filtre 4
+# Ici il y a des valeurs négatives et positives mais dans les colonnes a la place des lignes
+# Ce qui va mettre en avant les variations horizontales de l'image en les assombrissant
+# Dans l'exemple de l'image les plus grandes variations horizontales sont celles des murs, qui sont bien noir dans la representation
+# Ici les murs assombris sont ceux de droites, et les murs clairs sont ceux de droites car les valeurs positives dans la colonne de gauche, 
+# Ducoup quand on passe le filtre de gauche a droite, de haut en bas, on commencera toujours a gauche et la cathedrale, etant plus sombre
+# si on est a sa gauche a cause des valeurs negatives, ce filtre rendre les points sur les murs blanc ( donc une valeur plus petite)
+# Et a droite c'est l'inverse ducoup ils deviennent noirs
 
 filtre_4 = np.array([[2, 0, -2], [4, 0, -4], [2, 0, -2]])
 
+print("Filtre 4")
+applique_filtre(X_pool, filtre_4)
+plt.show()
+
+#%% Filtre 5 
+# Fonctionne environ comme le filtre 3 sauf que la le filtre est beaucoup plus brutal qu'avant car il prend seulement 2 pixels en compte sur la meme ligne
+# horizontale compare à 3 lignes horizontales précédemment
 filtre_5 = np.array([[0, 0, 0], [-1, 1, 0], [0, 0, 0]])
 
-# Faire varier la valeur centrale entre 0 et -200
-filtre_5 = np.array([[0, 1, 0], [1, -200, 1], [0, 1, 0]])
+print("Filtre 5 : Dérivée horizontale simple")
+applique_filtre(X_pool, filtre_5)
+plt.show()
 
+#%% Filtre 5.bis
+# la valeur du centre est négative et entouré de valeurs positives
+# Cela va donc accentuer les contours ce qui dans le cas de la cathedrale permet de la separer de l'arriere plan ( le ciel)
+filtre_5bis = np.array([[0, 1, 0], [1, -200, 1], [0, 1, 0]])
+
+print("Filtre 5.bis : Renforcement des contours (Laplacien modifié)")
+applique_filtre(X_pool, filtre_5bis)
+plt.show()
+
+#%% Filtre 6
+# la valeur du centre est négative et entouré de valeurs positives, mais compare a avant on prend les diagonales en comptes
+# Cela va donc accentuer les contours ce qui dans le cas de la cathedrale permet de la separer de l'arriere plan ( le ciel)
+# Mais va rendre le tout un peu plus flou que précédemment
 filtre_6 = np.array([[1, 1, 1], [1, -200, 1], [1, 1, 1]])
 
+print("Filtre 6")
+applique_filtre(X_pool, filtre_6)
+plt.show()
 
-# Faire varier la valeur centrale entre 0 et 200
+#%% Filtre 7
+# Ici à la place d'accentuer les contours on va accentuer les centres, ainsi Les détails de l'image ressortent beaucoup plus que 
+# Précédemment
+
 filtre_7 = np.array([[0, -1, 0], [-1, 10, -1], [0, -1, 0]])
 
+print("Filtre 7")
+applique_filtre(X_pool, filtre_7)
+plt.show()
+
+#%% Filtre 8
+# Même principe d'accentuation, sauf que la on prend les diagonales en compte ce qui va encore plus accentuer les pixels
 filtre_8 = np.array([[-1, -1, -1], [-1, 10, -1], [-1, -1, -1]])
 
+print("Filtre 8")
+applique_filtre(X_pool, filtre_8)
+plt.show()
 
-Filtre_9 = np.array(
+#%% Filtre 9 =
+# Fait une accentuation en forme de croix et va prendre plus de valeurs que le filtre 7, il va cherche plus loing
+filtre_9 = np.array(
     [
         [0, 0, -1, 0, 0],
         [0, 0, -1, 0, 0],
@@ -318,3 +422,22 @@ Filtre_9 = np.array(
         [0, 0, -1, 0, 0],
     ]
 )
+
+print("Filtre 9 : Détection de contours en croix")
+applique_filtre(X_pool, filtre_9)
+plt.show()
+
+#%%Question Finale
+
+"""
+Reponse ChatGPT faut revoir
+Dans un réseau de neurones classique, chaque couche est généralement définie par une transformation affine suivie d'une activation :
+
+Z(i+1) = \sigma(W(i)Z(i) + b(i))
+
+Ici, la matrice de poids W(i) et le biais b(i) représentent des paramètres à apprendre. Cependant, dans l'architecture donnée par l'équation
+Z(i+1) = \sigma(Z(i) * F(i)), les poids sont directement intégrés sous forme d'un filtre F(i) qui est souvent de taille réduite, notamment dans 
+le cadre des réseaux convolutionnels. Cela permet une forte diminution du nombre total de paramètres du réseau, ce qui réduit la complexité du 
+modèle et les besoins en mémoire.
+
+"""
