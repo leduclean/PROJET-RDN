@@ -10,8 +10,8 @@ image = Image.open("gr_cathedrale.png")
 X = np.asarray(image)
 
 # Print the information of the data
-print("Format : ", X.shape)
-print("Nombre de nuances de gris : ", X.max())
+# print("Format : ", X.shape)
+# print("Nombre de nuances de gris : ", X.max())
 
 
 # Affiche l'image seule
@@ -39,7 +39,6 @@ affiche_image(X)
 # %% Exercice 1 : Pooling : Max, Moyen et Median
 
 
-
 def get_block_values(X: np.array, ratio_x: int, ratio_y: int) -> np.array:
     """Return a np.array containing block divisions (shape(ratio_x, ratio_y)) of the
     initial matrix X
@@ -50,8 +49,8 @@ def get_block_values(X: np.array, ratio_x: int, ratio_y: int) -> np.array:
         ratio_y (int): column ratio of block division
 
     Returns:
-        np.array: the block divisions of X 
-    """    
+        np.array: the block divisions of X
+    """
     # Ensure float type to use np.nan
     X = X.astype(float)
 
@@ -70,8 +69,10 @@ def get_block_values(X: np.array, ratio_x: int, ratio_y: int) -> np.array:
     ).swapaxes(1, 2)
     return blocks
 
+
 # For the following functions,
 # axis = (2,3) since the array has the form (n_blocks_rows, n_blocks_columns, ratio_x, ratio_y)
+
 
 def pooling_max(X: np.array, ratio_x: int, ratio_y: int) -> np.array:
     """Pooling choosing the maximum value of the block area
@@ -83,11 +84,12 @@ def pooling_max(X: np.array, ratio_x: int, ratio_y: int) -> np.array:
 
     Returns:
         np.array: a pooled matrix that has (Dx/ratio_x, Dy/ratio_y)
-    """    
+    """
     blocks = get_block_values(X, ratio_x, ratio_y)
     # Compute max while ignoring np.nan
     Y = np.nanmax(blocks, axis=(2, 3))
     return Y
+
 
 def pooling_mean(X: np.array, ratio_x: int, ratio_y: int) -> np.array:
     """Pooling choosing the average value of the block area
@@ -99,11 +101,12 @@ def pooling_mean(X: np.array, ratio_x: int, ratio_y: int) -> np.array:
 
     Returns:
         np.array: a pooled matrix that has (Dx/ratio_x, Dy/ratio_y)
-    """    
+    """
     blocks = get_block_values(X, ratio_x, ratio_y)
     # Compute mean while ignoring np.nan
     Y = np.nanmean(blocks, axis=(2, 3))
     return Y
+
 
 def pooling_median(X: np.array, ratio_x: int, ratio_y: int) -> np.array:
     """Pooling choosing the median value of the block area (if even values: returns the superior value)
@@ -115,21 +118,65 @@ def pooling_median(X: np.array, ratio_x: int, ratio_y: int) -> np.array:
 
     Returns:
         np.array: a pooled matrix that has (Dx/ratio_x, Dy/ratio_y)
-    """    
+    """
     blocks = get_block_values(X, ratio_x, ratio_y)
     # Compute median while ignoring np.nan and taking the superior value
     Y = np.nanquantile(blocks, 0.5, axis=(2, 3), method="higher")
     return Y
 
+
 X_max = pooling_max(X, 120, 107)
 X_mean = pooling_mean(X, 120, 107)
 X_median = pooling_median(X, 120, 107)
 
-affiche_trois_images(X_max, X_mean, X_median)
-plt.show()
+# affiche_trois_images(X_max, X_mean, X_median)
+# plt.show()
 
 
 # %% Exercice 2 : Convolution
+
+
+def convolution1D(X: list, F: list) -> list:
+    """For a data X, make a 1 dimension convolution by the filter F
+
+    Args:
+        X (list): data to convolut (size: N)
+        F (list): Filter (size: H)
+
+    Returns:
+        list: convolution output list (size: N - H )
+    """
+    H = len(F)
+    N = len(X)
+    Z = []
+    for i in range(0, N - H + 1):
+        zi = 0
+        for h in range(0, H):
+            zi += X[i + H - (h + 1)] * F[h]
+        Z.append(zi)
+    return Z
+
+
+def cross_correlation1D(X: list, F: list) -> list:
+    """For a data X, make a 1 dimension convolution by the reversed filter F
+
+    Args:
+        X (list): data to convolut (size: N)
+        F (list): Filter (size: H)
+
+    Returns:
+        list: convolution output list (size: N - H + 1)
+    """
+    H, N = len(F), len(X)
+    Z = []
+    for i in range(0, N - H + 1):
+        zi = 0
+        for h in range(0, H):
+            zi += X[i + h] * F[h]
+        Z.append(zi)
+    return Z
+
+
 # Definitions des donnees
 X_1 = [80, 0, 0, 0, 0, 0, 80]
 X_2 = [60, 20, 10, 0, 10, 20, 60]
@@ -140,10 +187,9 @@ F_1_norm = [0.25, 0.5, 0.25]
 F_2 = [-1, 2, -1]
 F_3 = [0, 1, 2]
 F_3_inv = [2, 1, 0]
-
 # Ces lignes permettent de tester les fonctions de convolutions et cross_correlation
 # Les decommenter une fois que vos fonctions sont implementees
-# # Convolution avec F_1
+# Convolution avec F_1
 # print("Convolution avec F_1 = [1,2,1] et F_1_norm = [0.25,0.5,0.25] :")
 # print("Convolution X_1*F_1 : ", convolution1D(X_1, F_1)) #[80, 0, 0, 0, 80]
 # print("Convolution X_1*F_1_norm : ", convolution1D(X_1, F_1_norm)) # [20.0, 0.0, 0.0, 0.0, 20.0]
@@ -166,23 +212,70 @@ F_3_inv = [2, 1, 0]
 # print("Convolution X_3*F_3_inv : ", convolution1D(X_3, F_3_inv),'\n') #[80, 110, 160, 200, 230]
 
 # # Comparaison entre convolution et cross_correlation
-# print("Comparaison entre convolution et convolution sur filtres inverses")
+# print("Comparaison entre convolution et cross_correlation sur filtres inverses")
 # print("Convolution X_2*F_3 : ", convolution1D(X_2, F_3)) #[140, 50, 20, 10, 40]
-# print("Convolution X_2*F_3_inv : ", cross_correlation1D(X_2, F_3_inv)) #[140, 50, 20, 10, 40]
+# print("cross correlation X_2*F_3_inv : ", cross_correlation1D(X_2, F_3_inv)) #[140, 50, 20, 10, 40]
 
+
+# *Interprétation des convolutions:
+# *F_1: lissage du signal, version normalisé: on conserve l'amplitude globale.
+# *F_2: passe haut: met en avant les transitions -> c'est pour ca qu'on a une valeur - au début pour F3 et a la fin une valeur positive lorsque le signal entrant devient haut
+# *F_3: accentue les valeurs à gauche en leur donnant un poids plus grand
+# *F_3_inv: accentue les valeurs à droite en leur donnat un poids plus grand
+
+
+# * Relation entre convolution et cross_correlation: l'un applique le filtre dans un sens et l'autre dans l'autre sens
 # %% Exercice 2 : Padding
+def convolution1D_padding(X: list, F: list) -> list:
+    """For a data X and a filter F, make a convolution that has the same number of element as X
+
+    Args:
+        X (list): data to convolut (size: N)
+        F (list): filter (size: H)
+
+    Returns:
+        list: convolution output (size: N)
+    """
+    N, H = len(X), len(F)
+    num_zeros = (H - 1) // 2  # the number of zeros correspond to the round part of H/2
+    X_padded = [0] * num_zeros + X + [0] * num_zeros
+    return convolution1D(X_padded, F)
 
 
 F_1 = [1, 2, 1]
 X_1 = [80, 0, 0, 0, 0, 0, 80]
-# print("Convolution X_1*F_1 : ", convolution1D_padding(X_1, F_1)) #[160, 80, 0, 0, 0, 80, 160]
+print(
+    "Convolution X_1*F_1 : ", convolution1D_padding(X_1, F_1)
+)  # [160, 80, 0, 0, 0, 80, 160]
 
 
 # %% Exercice 2 : Stride
+def convolution1D_stride(X: list, F: list, k: int) -> list:
+    """For a data X and a filter F, make a k-Stride convolution -> a convolution with a k jump each iterations
+
+    Args:
+        X (list): data to convolut (size: N)
+        F (list): filter to apply (size: H)
+        k (int): Stride factor -> filter jump on iteration
+
+    Returns:
+        list: stride-convolution output (size: E((N - H)/k))
+    """
+    N, H = len(X), len(F)
+    Z = []
+    for i in range(
+        (N - H) // k + 1
+    ):  # It's ot specified if the len as to be correct for all X, F and k be using //, we assure that it steel correct
+        zi = 0
+        for h in range(H):
+            zi += X[i * k + (H - 1) - h] * F[h]
+        Z.append(zi)
+    return Z
+
 
 F_1 = [1, 2, 1]
 X_1 = [80, 0, 0, 10, 0, 0, 1, 0, 0, 10, 0, 0, 80]
-# print("Convolution X_1*F_1 : ", convolution1D_stride(X_1, F_1,2)) #[80, 20, 1, 1, 20]
+print("Convolution X_1*F_1 : ", convolution1D_stride(X_1, F_1, 2))  # [80, 20, 1, 1, 20]
 
 
 # %% Exercice 2 : Convolution 2D
