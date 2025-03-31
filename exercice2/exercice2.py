@@ -1,16 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt 
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-from display import affichage_fonction_erreur, affichage_fonction_precision
+from visualisation.visualizer import Visualizer
 
+
+viz = Visualizer()
 #%% Question 1
-"""
-Si on cherche à minimiser J, alors on cherche à maximiser les probabilités y_{nk}\in [0,1] car ln(1) = 0 alors que si y_{nk} proche de 0
-ln(y_{nk}) devient très petit.
-Ce qui veut dire qu'on cherche la plus grande probabibilité de y_{nk}, donc la plus grande probabilité à réaliser une bonne classification
-"""
+# 
+# Si on cherche à minimiser J, alors on cherche à maximiser les probabilités y_{nk}\in [0,1] car ln(1) = 0 alors que si y_{nk} proche de 0
+# ln(y_{nk}) devient très petit.
+# Ce qui veut dire qu'on cherche la plus grande probabibilité de y_{nk}, donc la plus grande probabilité à réaliser une bonne classification
+# 
 #%% Introduction : Lecture des jeux de données fournis 
 def readdataset2d(fname):
     with open(fname, "r") as file:
@@ -118,19 +117,25 @@ def regression_logistique(W, b, X, Y, T, lr=0.1, nb_iter=1000, int_affiche=100, 
 
 # #%% Import du jeu de données : probleme à 5 classes
 
-# X_train, T_train = readdataset2d("exercice2/probleme_5_classes")
-# N, D = X_train.shape
-# K = 5 #5 classes
+X_train, T_train = readdataset2d("probleme_5_classes")
+N, D = X_train.shape
+K = 5 #5 classes
 
-# # Pour la visualisation, on garde T_train sous sa forme originelle
+T_conserve = T_train.copy()
+# Pour la visualisation, on garde T_train sous sa forme originelle
 # plt.scatter(X_train[:,0], X_train[:,1], c=T_train, s = 30)
-# # plt.show()
-# W, b, Y_train, C_train_init = initialise(D, K)
-# T_train = convertit(T_train, K)
-# W_init = W.copy()
-# b_init = b.copy()
-# affichage_fonction_erreur(regression_logistique(W, b, X_train, Y_train, T_train, lr=0.01))
+W, b, Y_train, C_train_init = initialise(D, K)
+T_train = convertit(T_train, K)
+W_init = W.copy()
+b_init = b.copy()
+ 
 
+viz.plot_error(regression_logistique(W, b, X_train, Y_train, T_train, 0.05, 1000, 100))
+viz.plot_decision_boundaries(W, b, X_train, T_conserve)
+C_final = predit_classe(Y_train, K)
+
+
+print(taux_precision(C_final, T_train))
 
 #%% Import du jeu de données : probleme à 6 classes (mais c'est devenu 5 d'apres le prof)
 
@@ -147,7 +152,6 @@ def regression_logistique(W, b, X, Y, T, lr=0.1, nb_iter=1000, int_affiche=100, 
 # W_init = W.copy()
 # b_init = b.copy()
 # affichage_fonction_erreur(regression_logistique(W, b, X_train, Y_train, T_train, lr=0.01))
-
 #%% A FAIRE :: OPTIMISER LE RDN pour le probleme à 6 classes
 
 # Comme on voit bien que juste la ligne c'est pas assez pour bien separer les differentes classes on va 
@@ -159,48 +163,25 @@ def regression_logistique(W, b, X, Y, T, lr=0.1, nb_iter=1000, int_affiche=100, 
 #avec differentes classes et a la fin on regarde laquelle la probabilité est la plus grande, ducoup on fait OUI j'appartient à ca et NON j'appartient pas 
 #A ca.
 
-X_train, T_train = readdataset2d("exercice2/probleme_6_classes")
-N, D = X_train.shape
+def sigma(x: float) -> float:
+    """
+    Fonction sigmoïde.
 
-import numpy as np
+    Parameters
+    ----------
+    x : float
+        Valeur d'entrée.
 
-def convertit(T: np.array, K: int) -> np.array:
-    new_T = np.zeros((len(T), K))  
-    for i, classification in enumerate(T):
-        new_T[i, classification - 1] = 1 
-    return new_T
+    Returns
+    -------
+    float
+        Valeur transformée par la fonction sigmoïde.
+    """
+    return 1 / (1 + np.exp(-x))
 
 
-#%%
-def sigma(x):
-    return 1/(1+np.exp(-x))
 
-def softmax(A: np.array) -> np.array:
-    B = []
-    for ligne in A:
-        B.append(1/np.sum(np.exp(ligne))*np.exp(ligne))
-    return np.array(B)
-
-def cross_entropy(Y: np.array, T: np.array):
-    N, K = Y.shape
-    J = 0
-    for n in range(N):
-        for k in range(K):
-            if T[n, k] == 1:
-                if np.log(Y[n, k]) == 0.0:
-                    continue
-                else :
-                    J -= T[n, k]*np.log(Y[n, k])
-    return J
-
-def convertit(T: np.array, K: int) -> np.array:
-    
-    new_T = np.zeros((len(T), K))  
-    for i, classification in enumerate(T):
-        new_T[i, classification - 1] = 1 
-    return new_T
-
-def predit_proba(parameters: list) -> np.array:
+def predit_proba_dense(parameters: list) -> np.array:
     W, b = parameters[0]
     datas = [sigma(X_train.dot(W)+b)]  # Sigmoïde pour couches cachées
     for i in range(1, len(parameters)):
@@ -213,11 +194,6 @@ def predit_proba(parameters: list) -> np.array:
     return datas
 
 
-#%%
-def predit_classe(Y: np.array, K: int) -> np.array:
-    prediction_index = np.argmax(Y, axis = 1) + 1
-    return convertit(prediction_index, K)
-
 def create_parameters(dimensions: list) -> list:
     parameters = []
     for indice in range(len(dimensions) - 1):
@@ -229,7 +205,7 @@ def create_parameters(dimensions: list) -> list:
 
 def initialise(dimensions: list,K) -> tuple [list, np.array, np.array]:
     parameters = create_parameters(dimensions)
-    datas = predit_proba(parameters)
+    datas = predit_proba_dense(parameters)
     C = predit_classe(datas[-1],K)
     return parameters, datas, C
                 
@@ -263,32 +239,33 @@ def updateWb(X: np.array, parameters: list, datas: list, T: np.array, lr: float)
         )
         
         
-#%%   
-
-def reseau(X: np.array, parameters: list, datas: list, T: np.array,K, lr = 0.001, nb_iter = 10000, int_affiche = 100, quiet = False ):
+def reseau_dense(X: np.array, parameters: list, datas: list, T: np.array,K, lr = 0.001, nb_iter = 10000, int_affiche = 100, quiet = False ):
     Y = datas[-1]
-    suite_erreur = [cross_entropy(Y,T)]
-    suite_precision = [taux_precision(predit_classe(Y, K), T)]
-    for i in range(nb_iter):
+    suite_erreur = [(0,cross_entropy(Y,T))]
+    suite_precision = [(0, taux_precision(predit_classe(Y, K), T))]
+    for i in range(1, nb_iter + 1):
         updateWb(X, parameters, datas, T, lr)
-        datas[:] = predit_proba(parameters)[:]
+        datas[:] = predit_proba_dense(parameters)[:]
         Y = datas[-1]
         if i % int_affiche == 0:
             erreur_iter = cross_entropy(Y, T)
             precision_iter = taux_precision(predit_classe(Y,K), T)
             if not quiet:
-                print("Erreur cross_entropy a l'iteration ", i+1 ," : " , erreur_iter)
-                print("precision cross_entropy a l'iteration ", i+1 ," : " , precision_iter)
-            suite_erreur.append(erreur_iter)
-            suite_precision.append(precision_iter)
+                print("Erreur cross_entropy a l'iteration ", i," : " , erreur_iter)
+                print("precision cross_entropy a l'iteration ", i," : " , precision_iter)
+            suite_erreur.append((i,erreur_iter))
+            suite_precision.append((i, precision_iter))
     return suite_erreur, suite_precision
 
-K = 5
-dimensions = [2,16,8, 5] #Premiere valeur et derniere valeur ne peuvent etre change.
+
+X_train, T_train = readdataset2d("probleme_6_classes")
+K = 5 # Le prof a dis que c'était 5 classes au final
+dimensions = [2, 16 ,8 , 5] #Premiere valeur et derniere valeur ne peuvent etre change.
 T_train = convertit(T_train, K)
 parameters, datas, C_train_init = initialise(dimensions,K)
-suite_erreur, suite_precision = reseau(X_train, parameters, datas, T_train,K)
+suite_erreur, suite_precision = reseau_dense(X_train, parameters, datas, T_train,K)
 C_train_final = predit_classe(datas[-1],K)
     
 affichage_fonction_precision(suite_precision,label= f'Architecture {dimensions}')
 affichage_fonction_erreur(suite_erreur, label = f'Architecture {dimensions}')
+
