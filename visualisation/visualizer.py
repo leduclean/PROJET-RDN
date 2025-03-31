@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from matplotlib.colors import Normalize
 
 class Visualizer:
     def __init__(self, cmap_name="viridis"):
@@ -45,36 +46,9 @@ class Visualizer:
         ax.legend()
         plt.show()
         
-    def plot_training_progress(self, error_data: list, precision_data: list) -> None:
-        """
-        Displays the error and precision curves side by side.
-        
-        Parameters:
-            error_data (list): List of tuples (iteration, error_value).
-            precision_data (list): List of tuples (iteration, precision_value).
-        """
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-        
-        iterations_error, errors = zip(*error_data)
-        iterations_precision, precisions = zip(*precision_data)
-        
-        ax1.plot(iterations_error, errors, label="Cross-entropy Error", color='red')
-        ax1.set_xlabel("Iterations")
-        ax1.set_ylabel("Error")
-        ax1.set_title("Training Error")
-        ax1.legend()
-        
-        ax2.plot(iterations_precision, precisions, label="Precision", color='green')
-        ax2.set_xlabel("Iterations")
-        ax2.set_ylabel("Precision (%)")
-        ax2.set_title("Training Precision")
-        ax2.legend()
-        
-        plt.show()
-
     def plot_decision_boundaries(self, W: np.array, b: np.array, X: np.array, T: np.array):
         """
-        Displays decision boundaries and data points.
+        Displays decision boundaries and data points with a colormap assigned to each class.
         
         Parameters:
             W (np.array): Model weight matrix.
@@ -83,20 +57,31 @@ class Visualizer:
             T (np.array): Targets or classes for the scatter plot.
         """
         x_vals = np.linspace(X[:, 0].min(), X[:, 0].max(), 100)
-        K = W.shape[1]
-        colors = [self.cmap(k) for k in range(K)]
         
+        # Number of classes (K) from the weight matrix
+        K = W.shape[1]
+        
+        cmap = self.cmap  
+        colors = [cmap(k / (K - 1)) for k in range(K)]  
+
         # Plot decision boundary for each class (one-vs-all)
         for k in range(K):
+            # Get the weights and bias for the k class
             w1, w2 = W[:, k]
             b_k = b[0, k]
+            
+            # Calculate the decision boundary for the k class
             y_vals = -(w1 * x_vals + b_k) / w2
+            
+            # Plot the decision boundary with the corresponding color for the class
             plt.plot(x_vals, y_vals, color=colors[k], label=f"Boundary class {k}")
         
-        # Display points
-        plt.scatter(X[:, 0], X[:, 1], c=T, s=30, cmap=self.cmap)
-        plt.title("Decision Boundaries - Multiclass Logistic Regression")
+        # Plot the data points with colors corresponding to their class labels
+        plt.scatter(X[:, 0], X[:, 1], c=T, s=30, cmap=cmap)  # Use colormap for classes
+        
+        # Add legend, title, and show the plot
         plt.legend()
+        plt.title("Decision Boundaries - Multiclass Logistic Regression")
         plt.show()
         
     def plot_multiple(self, list_of_curves: list, to_display: str = "error", learning_rate_modulation: np.ndarray = None, cmap: str = "viridis") -> None:
