@@ -1,8 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt 
-#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-#from display import affichage_fonction_erreur, affichage_fonction_precision
-
+from visualisation.visualizer import Visualizer
 #%% Introduction : Lecture des jeux de données fournis 
 def readdataset2d(fname):
     with open(fname, "r") as file:
@@ -26,85 +24,242 @@ N, D = X_test.shape
 
 # %%
 # 1. Implémentation du réseau
-def sigma(x):
-    return 1/(1+np.exp(-x))
+import numpy as np
+import matplotlib.pyplot as plt
 
-def predit_classe(Y):
+# %%
+# 1. Implémentation du réseau
+
+def sigma(x: float) -> float:
+    """
+    Fonction sigmoïde.
+
+    Parameters
+    ----------
+    x : float
+        Valeur d'entrée.
+
+    Returns
+    -------
+    float
+        Valeur transformée par la fonction sigmoïde.
+    """
+    return 1 / (1 + np.exp(-x))
+
+
+def predit_classe(Y: np.ndarray) -> np.ndarray:
+    """
+    Prédit la classe en arrondissant la sortie du modèle.
+
+    Parameters
+    ----------
+    Y : np.ndarray
+        Sortie du réseau de neurones.
+
+    Returns
+    -------
+    np.ndarray
+        Classes prédites.
+    """
     return np.round(Y)
 
-def taux_precision(C, T):
-    N = len(T)
-    return np.sum(np.equal(T, C))*100/N
 
-def cross_entropy(Y,T):
+def taux_precision(C: np.ndarray, T: np.ndarray) -> float:
+    """
+    Calcule le taux de précision des prédictions.
+
+    Parameters
+    ----------
+    C : np.ndarray
+        Classes prédites.
+    T : np.ndarray
+        Classes réelles.
+
+    Returns
+    -------
+    float
+        Taux de précision en pourcentage.
+    """
+    N = len(T)
+    return np.sum(np.equal(T, C)) * 100 / N
+
+
+def cross_entropy(Y: np.ndarray, T: np.ndarray) -> float:
+    """
+    Calcule l'erreur d'entropie croisée.
+
+    Parameters
+    ----------
+    Y : np.ndarray
+        Sortie du modèle.
+    T : np.ndarray
+        Cibles réelles.
+
+    Returns
+    -------
+    float
+        Erreur d'entropie croisée.
+    """
     N = len(Y)
     J = 0
     for i in range(N):
         if T[i] == 1:
             if np.log(Y[i]) == 0.0:
                 continue
-            else :
+            else:
                 J -= np.log(Y[i])
-        else :
-            if np.log(1-Y[i]) == 0.0:
+        else:
+            if np.log(1 - Y[i]) == 0.0:
                 continue
-            else :
-                J -= np.log(1-Y[i])
+            else:
+                J -= np.log(1 - Y[i])
     return J
 
-def create_parameters(dimensions: list) -> list:
+
+def create_parameters(dimensions: list[int]) -> list[tuple[np.ndarray, np.ndarray]]:
+    """
+    Initialise les paramètres du réseau de neurones.
+
+    Parameters
+    ----------
+    dimensions : list[int]
+        Liste des dimensions des couches du réseau.
+
+    Returns
+    -------
+    list[tuple[np.ndarray, np.ndarray]]
+        Liste des poids et biais pour chaque couche.
+    """
     parameters = []
     for indice in range(len(dimensions) - 1):
-        W = np.random.uniform(-2, 2, size = (dimensions[indice], dimensions[indice + 1]))
-        # b de dimension (1, dimensions[indice+1])
-        b = np.random.randn(1, dimensions[indice+1])
+        W = np.random.uniform(-2, 2, size=(dimensions[indice], dimensions[indice + 1]))
+        b = np.random.randn(1, dimensions[indice + 1])
         parameters.append((W, b))
     return parameters
 
-def get_datas_from_parameters(parameters: list) -> np.array:
+
+def get_datas_from_parameters(parameters: list[tuple[np.ndarray, np.ndarray]]) -> list[np.ndarray]:
+    """
+    Calcule les activations des couches du réseau.
+
+    Parameters
+    ----------
+    parameters : list[tuple[np.ndarray, np.ndarray]]
+        Liste des poids et biais.
+
+    Returns
+    -------
+    list[np.ndarray]
+        Liste des activations de chaque couche.
+    """
     W, b = parameters[0]
     datas = [sigma(np.dot(X_train, W) + b)]
     for i in range(1, len(parameters)):
-        W, b  = parameters[i]
+        W, b = parameters[i]
         Wprev = datas[-1]
         datas.append(sigma(np.dot(Wprev, W) + b))
     return datas
 
-def initialise(dimensions: list) -> tuple [list, np.array, np.array]:
+
+def initialise(dimensions: list[int]) -> tuple[list[tuple[np.ndarray, np.ndarray]], list[np.ndarray], np.ndarray]:
+    """
+    Initialise les paramètres et les activations du réseau.
+
+    Parameters
+    ----------
+    dimensions : list[int]
+        Liste des dimensions des couches du réseau.
+
+    Returns
+    -------
+    tuple[list[tuple[np.ndarray, np.ndarray]], list[np.ndarray], np.ndarray]
+        Les paramètres, les activations et les classes initiales.
+    """
     parameters = create_parameters(dimensions)
     datas = get_datas_from_parameters(parameters)
     C = predit_classe(datas[-1])
     return parameters, datas, C
 
-def updateW(X: np.array, parameters: list, datas: list, T: np.array, lr: float):
-    # Y est la sortie du réseau
+
+def updateW(X: np.ndarray, parameters: list[tuple[np.ndarray, np.ndarray]], datas: list[np.ndarray], T: np.ndarray, lr: float) -> None:
+    """
+    Met à jour les poids et biais du réseau par rétropropagation.
+
+    Parameters
+    ----------
+    X : np.ndarray
+        Données d'entrée.
+    parameters : list[tuple[np.ndarray, np.ndarray]]
+        Poids et biais du réseau.
+    datas : list[np.ndarray]
+        Activations intermédiaires.
+    T : np.ndarray
+        Cibles réelles.
+    lr : float
+        Taux d'apprentissage.
+    """
     Y = datas[-1]
-    # Calcul du delta pour la couche de sortie
-    delta = Y - T 
-    # Pour la dernière couche (couche L)
+    delta = Y - T
     W_last, b_last = parameters[-1]
     Z_prev = datas[-2] if len(datas) >= 2 else X  # activation de la couche précédente
-    parameters[-1] = (W_last - lr * np.dot(Z_prev.T, delta),
-                      b_last - lr * np.sum(delta, axis=0, keepdims=True))
-    
+    parameters[-1] = (
+        W_last - lr * np.dot(Z_prev.T, delta),
+        b_last - lr * np.sum(delta, axis=0, keepdims=True),
+    )
+
     # Rétropropagation pour les couches cachées
-    # Parcours de L-1 à 0
     for i in range(len(parameters) - 2, -1, -1):
         W_curr, b_curr = parameters[i]
-        Z_prev = X if i == 0 else datas[i-1]
+        Z_prev = X if i == 0 else datas[i - 1]
         Z_curr = datas[i]
-        delta = np.dot(delta, parameters[i+1][0].T) * (Z_curr * (1 - Z_curr))
-        # Mise à jour de la couche i
-        parameters[i] = (W_curr - lr * np.dot(Z_prev.T, delta),
-                         b_curr - lr * np.sum(delta, axis=0, keepdims=True))
+        delta = np.dot(delta, parameters[i + 1][0].T) * (Z_curr * (1 - Z_curr))
+        parameters[i] = (
+            W_curr - lr * np.dot(Z_prev.T, delta),
+            b_curr - lr * np.sum(delta, axis=0, keepdims=True),
+        )
 
 
+def reseau(
+    X: np.ndarray,
+    parameters: list[tuple[np.ndarray, np.ndarray]],
+    datas: list[np.ndarray],
+    T: np.ndarray,
+    lr: float = 0.001,
+    nb_iter: int = 10000,
+    int_affiche: int = 100,
+    quiet: bool = False,
+) -> tuple[list[float], list[float]]:
+    """
+    Entraîne le réseau de neurones et renvoie les np.array pour les courbes d'erreur et de précision.
 
-def reseau(X: np.array, parameters: list, datas: list, T: np.array, lr = 0.001, nb_iter = 10000, int_affiche = 100, quiet = False):
+    Parameters
+    ----------
+    X : np.ndarray
+        Données d'entrée.
+    parameters : list[tuple[np.ndarray, np.ndarray]]
+        Poids et biais du réseau.
+    datas : list[np.ndarray]
+        Activations intermédiaires.
+    T : np.ndarray
+        Cibles réelles.
+    lr : float, optional
+        Taux d'apprentissage (default: 0.001).
+    nb_iter : int, optional
+        Nombre d'itérations (default: 10000).
+    int_affiche : int, optional
+        Intervalle d'affichage (default: 100).
+    quiet : bool, optional
+        Mode silencieux (default: False).
+
+    Returns
+    -------
+    tuple[list[float], list[float]]
+        Liste des erreurs et précisions au cours des itérations.
+    """
     Y = datas[-1]
-    suite_erreur = [cross_entropy(Y,T)]
-    suite_precision = [taux_precision(predit_classe(Y), T)]
-    for i in range(nb_iter):
+    suite_erreur = [(0, cross_entropy(Y, T))]
+    suite_precision = [(0, taux_precision(predit_classe(Y), T))]
+    for i in range(1, nb_iter  + 1):
         updateW(X, parameters, datas, T, lr)
         datas[:] = get_datas_from_parameters(parameters)[:]
         Y = datas[-1]
@@ -112,28 +267,18 @@ def reseau(X: np.array, parameters: list, datas: list, T: np.array, lr = 0.001, 
             erreur_iter = cross_entropy(Y, T)
             precision_iter = taux_precision(predit_classe(Y), T)
             if not quiet:
-                print("Erreur cross_entropy a l'iteration ", i+1 ," : " , erreur_iter)
-            suite_erreur.append(erreur_iter)
-            suite_precision.append(precision_iter)
+                print("Erreur cross_entropy a l'iteration ", i , " : ", erreur_iter)
+                print("precision cross_entropy a l'iteration ", i ," : " , precision_iter)
+
+            suite_erreur.append((i, erreur_iter))
+            suite_precision.append((i, precision_iter))
     return suite_erreur, suite_precision
-
-
-
 
 dimensions = [2, 15, 15, 3, 1]
 parameters, datas, C_train_init = initialise(dimensions)
 suite_erreur, suite_precision = reseau(X_train, parameters, datas, T_train)
 C_train_final = predit_classe(datas[-1])
 
-
-def get_lr_modulation_array(alpha_min: int, alpha_max: int, nbr_of_element: int, to_display = "error") -> np.array:
-    lr_values = np.linspace(alpha_min, alpha_max, nbr_of_element)
-    if to_display == "error":
-        liste_xn = [(reseau(X_train, parameters, datas, T_train, lr,  quiet = True)[0], lr) for lr in lr_values]
-    if to_display == "precision":
-        liste_xn = [(reseau(X_train, parameters, datas, T_train, lr,  quiet = True)[1], lr) for lr in lr_values]
-    return liste_xn
-#%% Question 2
 DIMENSIONS = [
     [2, 3, 3, 1],
     [2, 7, 7, 7, 1],
@@ -145,63 +290,83 @@ DIMENSIONS = [
     [2, 5, 4, 4, 4 ,4, 1]
 ]
 
-def get_curve_array_from_dimension(list_of_dimensions: list, verif = True):
-    
-        
+def get_lr_modulation_array(
+    alpha_min: int, alpha_max: int, nbr_of_element: int, to_display: str = "error"
+) -> np.ndarray:
+    """
+    Calcule un tableau de valeurs de modulation du taux d'apprentissage.
+
+    Parameters
+    ----------
+    alpha_min : int
+        Taux d'apprentissage minimal.
+    alpha_max : int
+        Taux d'apprentissage maximal.
+    nbr_of_element : int
+        Nombre d'éléments.
+    to_display : str, optional
+        Type de courbe à afficher ("error" ou "precision", default: "error").
+
+    Returns
+    -------
+    np.ndarray
+        Liste des courbes d'erreur ou de précision en fonction des valeurs du taux d'apprentissage.
+    """
+    lr_values = np.linspace(alpha_min, alpha_max, nbr_of_element)
+    if to_display == "error":
+        liste_xn = [
+            (reseau(X_train, parameters, datas, T_train, lr, quiet=True)[0])
+            for lr in lr_values
+        ]
+    if to_display == "precision":
+        liste_xn = [
+            (reseau(X_train, parameters, datas, T_train, lr, quiet=True)[1])
+            for lr in lr_values
+        ]
+    return liste_xn, lr_values
+
+
+def get_curve_array_from_dimension(list_of_dimensions: list[list[int]], verif: bool = True) -> list[tuple[list[float], list[float]]]:
+    """
+    Calcule les courbes d'erreur et de précision pour plusieurs architectures.
+
+    Parameters
+    ----------
+    list_of_dimensions : list[list[int]]
+        Liste des dimensions des différentes architectures de réseau.
+    verif : bool, optional
+        Si True, test avec plusieurs architectures, sinon avec une seule (default: True).
+
+    Returns
+    -------
+    list[tuple[list[float], list[float]]]
+        Liste des courbes d'erreur et de précision pour chaque architecture.
+    """
     curves_array = []
-    
-    #Si on veut tester juste avec une seule liste de dimension et pas une liste de liste de dimensions
-    if verif == False :
+    if verif == False:
         dimension = list_of_dimensions
-        parameters,datas, _ = initialise(dimension)
-        suite_erreur, suite_precision = reseau(X_train, parameters, datas, T_train, quiet = True)
+        parameters, datas, _ = initialise(dimension)
+        suite_erreur, suite_precision = reseau(
+            X_train, parameters, datas, T_train, quiet=True
+        )
         curves_array.append((suite_erreur, suite_precision))
         return curves_array
-    
-    for dimension in list_of_dimensions :
+
+    for dimension in list_of_dimensions:
         parameters, datas, _ = initialise(dimension)
-        suite_erreur, suite_precision = reseau(X_train, parameters, datas, T_train, quiet = True)
+        suite_erreur, suite_precision = reseau(
+            X_train, parameters, datas, T_train, quiet=True
+        )
         curves_array.append((suite_erreur, suite_precision))
     return curves_array
 
 
-#On comprend rien à l'affichage ptetre faire une fonction affiche pour comprendre les données
-print(get_curve_array_from_dimension(DIMENSIONS[0], False))
-        
-
-def affiche_multiple(liste_xn: list, to_display = "error", learning_rate_modulation = False , cmap='viridis'):
-    n_points = len(liste_xn[0][0]) 
-    X = np.arange(0, n_points)
-    fig, ax = plt.subplots(figsize=(8, 6))
-    
-    # Nombre de courbes à tracer
-    n_curves = len(liste_xn)
-    # Récupération d'une colormap avec n_curves couleurs distinctes
-    colors = plt.cm.get_cmap(cmap, n_curves)
-    # Tracer chaque courbe avec une couleur issue de la colormap
-    if learning_rate_modulation:
-        for i, xn in enumerate(liste_xn):
-            curve_to_display, lr = xn
-            ax.plot(X, curve_to_display, color=colors(i), label=f'Learning rate: {lr}')
-    else:
-        for i, xn in enumerate(liste_xn):
-            ax.plot(X, xn[0] if to_display == "error" else xn[1], color=colors(i), label=f'Curve: {i + 1}')            
-    if to_display == "error":
-        ax.set_xlabel("Itérations")
-        ax.set_ylabel("Entropy error")
-        ax.set_title("Error comparison for different learning rate values")
-        ax.legend()
-    if to_display == "precision":
-        ax.set_title("taux de precision")
-        ax.set_xlabel("Iterations")
-        ax.set_ylabel("taux de precision")
-        ax.legend()
-    plt.show()
 
 
-#affiche_multiple(get_curve_array_from_dimension(DIMENSIONS))
-
-# affichage_fonction_erreur(suite_erreur, label = f'Architecture {dimensions}')
-# affichage_fonction_precision(suite_precision, label= f'Architecture {dimensions}')
-# affiche_multiple(get_lr_modulation_array(0.0005, 0.001, 3, "error"), "error", True)
-# %%
+viz = Visualizer()
+# viz.plot_error(suite_erreur, f"architecture {dimensions}")
+# viz.plot_precision(suite_precision, f"Architecture {dimensions}")
+# viz.plot_training_progress(suite_erreur, suite_precision)
+# * Learning rate impact:
+suite_erreur_lr, lr_modulation = get_lr_modulation_array(0.0005, 0.001, 3, "error")
+viz.plot_multiple(suite_erreur_lr,"error", lr_modulation)
