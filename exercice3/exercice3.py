@@ -1,3 +1,4 @@
+#%% Introduction 
 from PIL import Image
 import numpy as np
 from matplotlib.pyplot import imshow, get_cmap
@@ -63,6 +64,7 @@ affiche_image(X)
 
 # %% Exercice 1 : Pooling : Max, Moyen et Médian
 
+
 def get_block_values(X: np.array, ratio_x: int, ratio_y: int) -> np.array:
     """
     Divise la matrice initiale X en blocs de taille (ratio_x, ratio_y).
@@ -88,7 +90,9 @@ def get_block_values(X: np.array, ratio_x: int, ratio_y: int) -> np.array:
     X_pad = np.full((new_l, new_c), np.nan, dtype=float)
     X_pad[:l, :c] = X
     # Diviser en blocs de taille (ratio_x, ratio_y)
-    blocs = X_pad.reshape(new_l // ratio_x, ratio_x, new_c // ratio_y, ratio_y).swapaxes(1, 2)
+    blocs = X_pad.reshape(
+        new_l // ratio_x, ratio_x, new_c // ratio_y, ratio_y
+    ).swapaxes(1, 2)
     return blocs
 
 
@@ -158,6 +162,7 @@ X_median = pooling_median(X, 120, 107)
 
 
 # %% Exercice 2 : Convolution
+
 
 def convolution1D(X: list, F: list) -> list:
     """
@@ -306,6 +311,7 @@ print("Convolution X_1 * F_1 (avec stride de 2) : ", convolution1D_stride(X_1, F
 
 # %% Exercice 2 : Convolution 2D
 
+
 def cross_correlation2D(X: np.array, F: np.array) -> list:
     """
     Effectue une corrélation croisée 2D entre une image et un filtre.
@@ -319,7 +325,7 @@ def cross_correlation2D(X: np.array, F: np.array) -> list:
     """
     Dx, Dy = X.shape
     Hx, Hy = F.shape
-    
+
     resultat = []
     for i in range(Dx - Hx + 1):
         ligne = []
@@ -330,7 +336,7 @@ def cross_correlation2D(X: np.array, F: np.array) -> list:
                     somme += X[i + ip][j + jp] * F[ip][jp]
             ligne.append(somme)
         resultat.append(ligne)
-    
+
     return resultat
 
 
@@ -370,9 +376,9 @@ plt.show()
 # %% Filtre 2
 # Ce filtre remplace chaque pixel par la moyenne de son voisinage, avec un poids plus élevé au centre,
 # imitant une fonction gaussienne pour préserver les contours.
-filtre_2 = np.array([[0.0625, 0.125, 0.0625],
-                     [0.125,  0.25,  0.125],
-                     [0.0625, 0.125, 0.0625]])
+filtre_2 = np.array(
+    [[0.0625, 0.125, 0.0625], [0.125, 0.25, 0.125], [0.0625, 0.125, 0.0625]]
+)
 print("Filtre 2")
 applique_filtre(X_pool, filtre_2)
 plt.show()
@@ -380,9 +386,7 @@ plt.show()
 
 # %% Filtre 3
 # Ce filtre présente des valeurs négatives et positives, accentuant les variations verticales en assombrissant l'image.
-filtre_3 = np.array([[-1, -2, -1],
-                     [ 0,  0,  0],
-                     [ 1,  2,  1]])
+filtre_3 = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
 print("Filtre 3")
 applique_filtre(X_pool, filtre_3)
 plt.show()
@@ -390,9 +394,7 @@ plt.show()
 
 # %% Filtre 4
 # Ce filtre accentue les variations horizontales en modifiant les colonnes plutôt que les lignes.
-filtre_4 = np.array([[ 2,  0, -2],
-                     [ 4,  0, -4],
-                     [ 2,  0, -2]])
+filtre_4 = np.array([[2, 0, -2], [4, 0, -4], [2, 0, -2]])
 print("Filtre 4")
 applique_filtre(X_pool, filtre_4)
 plt.show()
@@ -400,9 +402,7 @@ plt.show()
 
 # %% Filtre 5
 # Ce filtre, similaire au filtre 3, est plus brutal car il ne prend en compte que 2 pixels sur la même ligne horizontale.
-filtre_5 = np.array([[0, 0, 0],
-                     [-1, 1, 0],
-                     [0, 0, 0]])
+filtre_5 = np.array([[0, 0, 0], [-1, 1, 0], [0, 0, 0]])
 print("Filtre 5 : Dérivée horizontale simple")
 applique_filtre(X_pool, filtre_5)
 plt.show()
@@ -410,9 +410,7 @@ plt.show()
 
 # %% Filtre 5.bis
 # Le centre est négatif entouré de valeurs positives, accentuant les contours pour mieux séparer la cathédrale de l'arrière-plan.
-filtre_5bis = np.array([[0, 1, 0],
-                        [1, -200, 1],
-                        [0, 1, 0]])
+filtre_5bis = np.array([[0, 1, 0], [1, -200, 1], [0, 1, 0]])
 print("Filtre 5.bis : Renforcement des contours (Laplacien modifié)")
 applique_filtre(X_pool, filtre_5bis)
 plt.show()
@@ -420,9 +418,7 @@ plt.show()
 
 # %% Filtre 6
 # Ce filtre prend en compte également les diagonales, accentuant les contours mais avec un léger flou supplémentaire.
-filtre_6 = np.array([[ 1,  1,  1],
-                     [ 1, -200, 1],
-                     [ 1,  1,  1]])
+filtre_6 = np.array([[1, 1, 1], [1, -200, 1], [1, 1, 1]])
 print("Filtre 6")
 applique_filtre(X_pool, filtre_6)
 plt.show()
@@ -430,9 +426,7 @@ plt.show()
 
 # %% Filtre 7
 # Ce filtre accentue les centres, faisant ressortir davantage les détails de l'image.
-filtre_7 = np.array([[ 0, -1,  0],
-                     [-1, 10, -1],
-                     [ 0, -1,  0]])
+filtre_7 = np.array([[0, -1, 0], [-1, 10, -1], [0, -1, 0]])
 print("Filtre 7")
 applique_filtre(X_pool, filtre_7)
 plt.show()
@@ -440,9 +434,7 @@ plt.show()
 
 # %% Filtre 8
 # Même principe d'accentuation en prenant en compte les diagonales, pour accentuer encore plus les pixels.
-filtre_8 = np.array([[-1, -1, -1],
-                     [-1, 10, -1],
-                     [-1, -1, -1]])
+filtre_8 = np.array([[-1, -1, -1], [-1, 10, -1], [-1, -1, -1]])
 print("Filtre 8")
 applique_filtre(X_pool, filtre_8)
 plt.show()
@@ -450,11 +442,15 @@ plt.show()
 
 # %% Filtre 9
 # Ce filtre accentue en forme de croix, prenant en compte plus de valeurs que le filtre 7 pour détecter les contours sur une plus grande zone.
-filtre_9 = np.array([[ 0,  0, -1,  0,  0],
-                     [ 0,  0, -1,  0,  0],
-                     [-1, -1, 10, -1, -1],
-                     [ 0,  0, -1,  0,  0],
-                     [ 0,  0, -1,  0,  0]])
+filtre_9 = np.array(
+    [
+        [0, 0, -1, 0, 0],
+        [0, 0, -1, 0, 0],
+        [-1, -1, 10, -1, -1],
+        [0, 0, -1, 0, 0],
+        [0, 0, -1, 0, 0],
+    ]
+)
 print("Filtre 9 : Détection de contours en croix")
 applique_filtre(X_pool, filtre_9)
 plt.show()
@@ -462,17 +458,17 @@ plt.show()
 
 # %% Question Finale
 
-"""
-Réponse (à revoir) :
+# 
+# Réponse (à revoir) :
 
-Dans un réseau de neurones classique, chaque couche est généralement définie par une transformation affine suivie d'une activation :
+# Dans un réseau de neurones classique, chaque couche est généralement définie par une transformation affine suivie d'une activation :
 
-    Z(i+1) = σ(W(i) * Z(i) + b(i))
+#     Z(i+1) = σ(W(i) * Z(i) + b(i))
 
-Ici, la matrice de poids W(i) et le biais b(i) représentent des paramètres à apprendre. Cependant, dans l'architecture définie par
+# Ici, la matrice de poids W(i) et le biais b(i) représentent des paramètres à apprendre. Cependant, dans l'architecture définie par
 
-    Z(i+1) = σ(Z(i) * F(i))
+#     Z(i+1) = σ(Z(i) * F(i))
 
-les poids sont directement intégrés sous forme d'un filtre F(i), souvent de taille réduite, comme dans les réseaux convolutionnels.
-Cela permet de réduire considérablement le nombre total de paramètres du réseau, diminuant ainsi la complexité du modèle et les besoins en mémoire.
-"""
+# les poids sont directement intégrés sous forme d'un filtre F(i), souvent de taille réduite, comme dans les réseaux convolutionnels.
+# Cela permet de réduire considérablement le nombre total de paramètres du réseau, diminuant ainsi la complexité du modèle et les besoins en mémoire.
+# 

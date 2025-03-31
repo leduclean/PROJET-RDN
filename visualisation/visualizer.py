@@ -12,44 +12,6 @@ class Visualiseur:
             nom_carte (str): Nom de la carte de couleurs à utiliser (par défaut "viridis").
         """
         self.carte = cm.get_cmap(nom_carte)
-    
-    def tracer_erreur(self, serie_erreurs: list, etiquette='Erreur de cross-entropie', couleur='blue'):
-        """
-        Affiche la courbe d'erreur.
-
-        Paramètres:
-            serie_erreurs (list): Liste de tuples (itération, valeur d'erreur).
-            etiquette (str): Étiquette pour la courbe.
-            couleur (str): Couleur de la courbe.
-        """
-        # Extraction des itérations et des valeurs d'erreur
-        iterations, erreurs = zip(*serie_erreurs)
-        fig, axe = plt.subplots()
-        axe.plot(iterations, erreurs, color=couleur, label=etiquette)
-        axe.set_title("Erreur de cross-entropie")
-        axe.set_xlabel("Itérations")
-        axe.set_ylabel("Erreur")
-        axe.legend()
-        plt.show()
-
-    def tracer_precision(self, serie_precision: list, etiquette, couleur='blue'):
-        """
-        Affiche la courbe de précision.
-
-        Paramètres:
-            serie_precision (list): Liste de tuples (itération, taux de précision).
-            etiquette (str): Étiquette pour la courbe.
-            couleur (str): Couleur de la courbe.
-        """
-        iterations, precisions = zip(*serie_precision)
-        fig, axe = plt.subplots()
-        axe.plot(iterations, precisions, color=couleur, label=etiquette)
-        axe.set_title("Taux de précision")
-        axe.set_xlabel("Itérations")
-        axe.set_ylabel("Précision")
-        axe.legend()
-        plt.show()
-
         
     def tracer_progression_entrainement(self, donnees_erreur: list, donnees_precision: list) -> None:
         """
@@ -70,7 +32,7 @@ class Visualiseur:
         axe1.set_title("Erreur d'entraînement")
         axe1.legend()
 
-        axe2.plot(iterations_precision, precisions, label="Précision", color='green')
+        axe2.plot(iterations_precision, precisions, label=f"Précision (final = {precisions[-1]})", color='green')
         axe2.set_xlabel("Itérations")
         axe2.set_ylabel("Précision (%)")
         axe2.set_title("Précision d'entraînement")
@@ -78,7 +40,7 @@ class Visualiseur:
 
         plt.show()
 
-    def tracer_frontieres_decision(self, poids: np.array, biais: np.array, X: np.array, T: np.array):
+    def tracer_frontieres_decision(self, poids: np.array, biais: np.array, X: np.array, T: np.array, architecure: list = None):
         """
         Affiche les frontières de décision et les points de données avec une carte de couleurs associée à chaque classe.
 
@@ -112,12 +74,17 @@ class Visualiseur:
         # Tracer les points de données avec une couleur selon leur classe
         plt.scatter(X[:, 0], X[:, 1], c=T, s=30, cmap=carte)
         
-        # Ajout de la légende, du titre et affichage
+                # Amélioration de l'affichage
+        plt.xlim(X[:, 0].min() - 0.5, X[:, 0].max() + 0.5)
+        plt.ylim(X[:, 1].min() - 0.5, X[:, 1].max())
+        plt.axis("equal")  # Échelle égale pour éviter l'écrasement
+        plt.gca().set_aspect('auto')  
+
         plt.legend()
-        plt.title("Frontières de décision - Régression logistique multiclasses")
+        plt.title(f"Frontières de décision - Reseau dense d'architecture: {architecure} " if architecure else "Frontières de décision - Régression logistique multiclasses")
         plt.show()
         
-    def tracer_multiple(self, liste_courbes: list, a_afficher: str = "error", modulation_taux: np.ndarray = None, nom_carte="viridis") -> None:
+    def tracer_multiple(self, liste_courbes: list, dimensions: list = [], a_afficher: str = "error", modulation_taux: np.ndarray = None,  nom_carte="viridis") -> None:
         """
         Affiche plusieurs courbes sur un même graphique.
 
@@ -133,23 +100,34 @@ class Visualiseur:
         
         # Pour chaque courbe dans la liste
         for i, courbe in enumerate(liste_courbes):
-            iterations, valeurs = zip(*courbe)  # Séparation des itérations et des valeurs
+            # Séparation des itérations et des valeurs
+            iterations, valeurs = zip(*(courbe[0] if a_afficher == "error" else courbe[1]))  
             
             # Vérifier si l'on doit afficher les courbes pour différents taux d'apprentissage
             if modulation_taux is not None and modulation_taux.size > 0:
-                axe.plot(iterations, valeurs, color=couleurs(i),  label=f"lr: {modulation_taux[i]:.6f}")
+                axe.plot(iterations, valeurs,
+                          color=couleurs(i), 
+                          label=f"lr: {modulation_taux[i]:.6f}, t_final ={valeurs[-1]}" if a_afficher != "error" else f"Architecture: {dimensions[i]}, e_final = {valeurs[-1]}" )
             else:
-                axe.plot(iterations, valeurs, color=couleurs(i),  label=f"Courbe {i+1}")
+                axe.plot(iterations, valeurs, 
+                        color=couleurs(i),  
+                        label=f"Architecture: {dimensions[i]}, t_final = {valeurs[-1]}" if a_afficher != "error" else f"Architecture: {dimensions[i]}, e_final = {valeurs[-1]}" )
         
         # Configuration des axes et du titre en fonction du type de courbe à afficher
         if a_afficher == "error":
             axe.set_xlabel("Itérations")
             axe.set_ylabel("Erreur de cross-entropie")
-            axe.set_title("Comparaison des erreurs pour différents taux d'apprentissage")
+            if modulation_taux is not None and modulation_taux.size > 0:
+                 axe.set_title("Comparaison des erreurs pour différents taux d'apprentissage")
+            else:
+                axe.set_title("Comparaison des erreurs pour différentes architectures")
         elif a_afficher == "precision":
             axe.set_xlabel("Itérations")
-            axe.set_ylabel("Taux de précision")
-            axe.set_title("Comparaison des taux de précision")
+            axe.set_ylabel("Taux de precision")
+            if modulation_taux is not None and modulation_taux.size > 0:
+                 axe.set_title("Comparaison des taux de precision pour différents taux d'apprentissage")
+            else:
+                axe.set_title("Comparaison des taux de precision pour différentes architectures")
         
         axe.legend()
         plt.show()
