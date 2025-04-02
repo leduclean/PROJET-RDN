@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import sys
 import os
 
-# ? est ce que le prof veut un fichier jupyther executable a la fin ?
 current_dir = os.path.dirname(os.path.abspath("exercice1/"))  # Dossier du fichier
 project_root = os.path.dirname(current_dir)  # Dossier du projet (remonte d'un niveau)
 
@@ -145,10 +144,10 @@ def get_datas_from_parameters(
 
     Paramètres:
         parameters (list[tuple[np.ndarray, np.ndarray]]): Liste des poids et biais de chaque couche.
+        X (np.ndarray): Données d'entrée.
 
     Retourne:
         list[np.ndarray]: Liste des activations pour chaque couche.
-        X (np.ndarray): Données d'entrée.
     """
     W, b = parameters[0]
     datas = [sigma(np.dot(X, W) + b)]
