@@ -1,8 +1,7 @@
-
 # %% Introduction
-# Import 
+# Import
 import numpy as np
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 import sys
 import os
 
@@ -14,6 +13,7 @@ if project_root not in sys.path:
     sys.path.append(project_root)
 
 from visualisation.visualizer import Visualiseur
+
 # Création d'une instance de la classe Visualizer pour les tracés
 viz = Visualiseur()
 
@@ -21,6 +21,7 @@ viz = Visualiseur()
 # Si on cherche à minimiser J, alors on cherche à maximiser les probabilités y_{nk} ∈ [0,1] car ln(1) = 0 alors que si y_{nk} proche de 0,
 # ln(y_{nk}) devient très petit.
 # Ce qui veut dire qu'on cherche la plus grande probabilité de y_{nk}, donc la plus grande probabilité de réaliser une bonne classification.
+
 
 # %% Import des données
 def readdataset2d(fname):
@@ -33,7 +34,8 @@ def readdataset2d(fname):
         T = np.reshape(np.array(T), (-1, 1))
     return np.array(X), T
 
-# %% Mise en place des fonctions pour la regression à plusieurs classes 
+
+# %% Mise en place des fonctions pour la regression à plusieurs classes
 def convertit(T: np.array, K: int) -> np.array:
     """
     Convertit un vecteur d'étiquettes en une matrice d'encodage one-hot.
@@ -44,11 +46,12 @@ def convertit(T: np.array, K: int) -> np.array:
 
     Returns:
         np.array: Tableau de taille (N, K) où new_T[i, j] = 1 si l'exemple i appartient à la classe j, sinon 0.
-    """    
+    """
     new_T = np.zeros((len(T), K))
     for i, classification in enumerate(T):
         new_T[i, classification] = 1
     return new_T
+
 
 def softmax(A: np.array) -> np.array:
     """
@@ -60,11 +63,12 @@ def softmax(A: np.array) -> np.array:
     Returns:
         np.array: Tableau de taille (n, p) où chaque ligne correspond à la distribution de probabilités softmax
                   de la ligne correspondante de A.
-    """        
+    """
     B = []
     for ligne in A:
         B.append(1 / np.sum(np.exp(ligne)) * np.exp(ligne))
     return np.array(B)
+
 
 def predit_proba(X: np.array, W: np.array, b: np.array) -> np.array:
     """
@@ -77,8 +81,9 @@ def predit_proba(X: np.array, W: np.array, b: np.array) -> np.array:
 
     Returns:
         np.array: Tableau de taille (N, K) contenant les probabilités prédites pour chaque classe.
-    """    
+    """
     return softmax(X.dot(W) + b)
+
 
 def predit_classe(Y: np.array, K: int) -> np.array:
     """
@@ -95,6 +100,7 @@ def predit_classe(Y: np.array, K: int) -> np.array:
     prediction_index = np.argmax(Y, axis=1)
     C = convertit(prediction_index, K)
     return C
+
 
 def initialise(D: int, K: int) -> tuple[np.array, np.array, np.array, np.array]:
     """
@@ -116,6 +122,7 @@ def initialise(D: int, K: int) -> tuple[np.array, np.array, np.array, np.array]:
     Y = predit_proba(X_train, W, b)
     C = predit_classe(Y, K)
     return W, b, Y, C
+
 
 def cross_entropy(Y: np.array, T: np.array) -> float:
     """
@@ -139,7 +146,10 @@ def cross_entropy(Y: np.array, T: np.array) -> float:
                     J -= T[n, k] * np.log(Y[n, k])
     return J
 
-def updateWb(W: np.array, b: np.array, X: np.array, Y: np.array, T: np.array, lr: float) -> None:
+
+def updateWb(
+    W: np.array, b: np.array, X: np.array, Y: np.array, T: np.array, lr: float
+) -> None:
     """
     Met à jour les poids et biais de la régression logistique en utilisant la descente de gradient.
 
@@ -157,6 +167,7 @@ def updateWb(W: np.array, b: np.array, X: np.array, Y: np.array, T: np.array, lr
         for n in range(N):
             grad += np.sum(Y - T, axis=1)[n]
         b[0, j] -= lr * grad
+
 
 def taux_precision(C: np.array, T: np.array) -> float:
     """
@@ -176,8 +187,11 @@ def taux_precision(C: np.array, T: np.array) -> float:
             well_classified += 1
     return well_classified * 100 / N
 
+
 # * Logistic Regression Function
-def regression_logistique(W, b, X, Y, T, lr=0.01, nb_iter=1000, int_affiche=100, quiet=False):
+def regression_logistique(
+    W, b, X, Y, T, lr=0.01, nb_iter=1000, int_affiche=100, quiet=False
+):
     """
     Entraîne un modèle de régression logistique à l'aide de la descente de gradient et affiche périodiquement
     l'erreur de cross-entropie et la précision.
@@ -200,7 +214,7 @@ def regression_logistique(W, b, X, Y, T, lr=0.01, nb_iter=1000, int_affiche=100,
 
     """
     suite_erreur = [(0, cross_entropy(Y, T))]
-    suite_precision = [(0,taux_precision(predit_classe(Y, K), T))]
+    suite_precision = [(0, taux_precision(predit_classe(Y, K), T))]
     for i in range(1, nb_iter + 1):
         updateWb(W, b, X, Y, T, lr)
         Y[:] = predit_proba(X, W, b)
@@ -214,10 +228,11 @@ def regression_logistique(W, b, X, Y, T, lr=0.01, nb_iter=1000, int_affiche=100,
             suite_precision.append((i, precision_iter))
     return suite_erreur, suite_precision
 
-#%% Importer le jeu de données pour la régression logistique - 4 classes
+
+# %% Importer le jeu de données pour la régression logistique - 4 classes
 # * Décommentez les lignes ci-dessous pour utiliser le jeu de données à 4 classes pour la régression logistique
 
-# # Dimensions et recupération des données 
+# # Dimensions et recupération des données
 # X_train, T_train = readdataset2d("probleme_4_classes")
 # N, D = X_train.shape
 # K = 4
@@ -225,24 +240,24 @@ def regression_logistique(W, b, X, Y, T, lr=0.01, nb_iter=1000, int_affiche=100,
 # # On conserve T pour l'affichage avec les frontières
 # T_conserve = T_train.copy()
 
-# # Initialisation des parametres pour la regresssion logistique 
+# # Initialisation des parametres pour la regresssion logistique
 # W, b, Y_train, C_train_init = initialise(D, K)
 # T_train = convertit(T_train, K)
 # W_init = W.copy()
 # b_init = b.copy()
 
-# # Regression 
+# # Regression
 # suite_erreur, suite_precision = regression_logistique(W, b, X_train, Y_train, T_train, lr = 0.01)
 
-# # Affichages 
+# # Affichages
 # viz.tracer_progression_entrainement(suite_erreur, suite_precision)
 # viz.tracer_frontieres_decision(W, b, X_train, T_conserve)
 
-#%% Importer le jeu de données pour la régression logistique - 5 classes
+# %% Importer le jeu de données pour la régression logistique - 5 classes
 # * Décommentez les lignes ci-dessous pour utiliser le jeu de données à 5 classes pour la régression logistique
 
 
-# Dimensions et recupération des données 
+# Dimensions et recupération des données
 
 # X_train, T_train = readdataset2d("probleme_5_classes")
 # N, D = X_train.shape
@@ -251,24 +266,24 @@ def regression_logistique(W, b, X, Y, T, lr=0.01, nb_iter=1000, int_affiche=100,
 # # On conserve T pour l'affichage avec les frontières
 # T_conserve = T_train.copy()
 
-# # Initialisation des parametres pour la regresssion logistique 
+# # Initialisation des parametres pour la regresssion logistique
 # W, b, Y_train, C_train_init = initialise(D, K)
 # T_train = convertit(T_train, K)
 # W_init = W.copy()
 # b_init = b.copy()
 
-# # Regression 
+# # Regression
 # suite_erreur, suite_precision = regression_logistique(W, b, X_train, Y_train, T_train, lr = 0.01)
 # print(suite_precision)
 # # Affichages
 # viz.tracer_progression_entrainement(suite_erreur, suite_precision)
 # viz.tracer_frontieres_decision(W, b, X_train, T_conserve)
 
-#%% Importer le jeu de données pour la régression logistique - Problème à 5 classes plus difficile
+# %% Importer le jeu de données pour la régression logistique - Problème à 5 classes plus difficile
 # * Décommentez les lignes ci-dessous pour utiliser le jeu de données à 5 classes plus difficile pour la régression logistique
 
 
-# # # Dimensions et recupération des données 
+# # # Dimensions et recupération des données
 
 # X_train, T_train = readdataset2d("probleme_5_plus_difficile")
 # N, D = X_train.shape
@@ -277,13 +292,13 @@ def regression_logistique(W, b, X, Y, T, lr=0.01, nb_iter=1000, int_affiche=100,
 # # On conserve T pour l'affichage avec les frontières
 # T_conserve = T_train.copy()
 
-# # Initialisation des parametres pour la regresssion logistique 
+# # Initialisation des parametres pour la regresssion logistique
 # W, b, Y_train, C_train_init = initialise(D, K)
 # T_train = convertit(T_train, K)
 # W_init = W.copy()
 # b_init = b.copy()
 
-# # Regression 
+# # Regression
 # suite_erreur, suite_precision = regression_logistique(W, b, X_train, Y_train, T_train, lr = 0.01)
 
 # # Affichages
@@ -291,7 +306,7 @@ def regression_logistique(W, b, X, Y, T, lr=0.01, nb_iter=1000, int_affiche=100,
 # viz.tracer_frontieres_decision(W, b, X_train, T_conserve)
 
 
-# %% RDN pour des donnnées plus difficiles 
+# %% RDN pour des donnnées plus difficiles
 
 # Ici, nous utilisons un réseau de neurones dense (à couches cachées multiples)
 # pour le problème à 5 classes plus difficile.
@@ -299,6 +314,7 @@ X_train, T_train = readdataset2d("probleme_5_plus_difficile")
 N, D = X_train.shape
 K = 5
 T_conserve = T_train.copy()
+
 
 def sigma(x: float) -> float:
     """
@@ -311,6 +327,7 @@ def sigma(x: float) -> float:
         float: La sortie de la fonction sigmoïde, calculée par 1/(1 + exp(-x)).
     """
     return 1 / (1 + np.exp(-x))
+
 
 def predit_proba_dense(parameters: list) -> list:
     """
@@ -335,6 +352,7 @@ def predit_proba_dense(parameters: list) -> list:
             datas.append(sigma(Wprev.dot(W) + b))
     return datas
 
+
 def create_parameters(dimensions: list) -> list:
     """
     Crée et initialise les paramètres (poids et biais) pour un réseau de neurones dense.
@@ -355,6 +373,7 @@ def create_parameters(dimensions: list) -> list:
         parameters.append((W, b))
     return parameters
 
+
 def initialise_dense(dimensions: list, K) -> tuple[list, np.array, np.array]:
     """
     Initialise les paramètres d'un réseau de neurones dense et calcule une première prédiction.
@@ -373,6 +392,7 @@ def initialise_dense(dimensions: list, K) -> tuple[list, np.array, np.array]:
     datas = predit_proba_dense(parameters)
     C = predit_classe(datas[-1], K)
     return parameters, datas, C
+
 
 def updateWb(X: np.array, parameters: list, datas: list, T: np.array, lr: float):
     """
@@ -411,8 +431,18 @@ def updateWb(X: np.array, parameters: list, datas: list, T: np.array, lr: float)
             b_curr - lr * np.sum(delta, axis=0, keepdims=True),
         )
 
-def reseau_dense(X: np.array, parameters: list, datas: list, T: np.array, K,
-                 lr=0.001, nb_iter=1000, int_affiche=100, quiet=False):
+
+def reseau_dense(
+    X: np.array,
+    parameters: list,
+    datas: list,
+    T: np.array,
+    K,
+    lr=0.001,
+    nb_iter=1000,
+    int_affiche=100,
+    quiet=False,
+):
     """
     Entraîne un réseau de neurones dense en utilisant la rétropropagation et la descente de gradient.
 
@@ -452,6 +482,7 @@ def reseau_dense(X: np.array, parameters: list, datas: list, T: np.array, K,
             suite_precision.append((i, precision_iter))
     return suite_erreur, suite_precision
 
+
 # Paramètres pour le réseau de neurones
 dimensions = [2, 6, 2, 5]
 T_train = convertit(T_train, K)
@@ -469,10 +500,11 @@ W_fin, b_fin = parameters[-1]
 
 viz.tracer_progression_entrainement(suite_erreur, suite_precision)
 
-# ! Attention, décommenter la section ci dessous uniquement si dimensions a comme avant dernier parametre 2 
-# ! en effet, on a besoin d'avoir des parametres de dimension 2 si on veut tracer les courbes de separation 
-viz.tracer_frontieres_decision(W_fin, b_fin, X_train, T_conserve, architecure=dimensions)
-
+# ! Attention, décommenter la section ci dessous uniquement si dimensions a comme avant dernier parametre 2
+# ! en effet, on a besoin d'avoir des parametres de dimension 2 si on veut tracer les courbes de separation
+# viz.tracer_frontieres_decision(
+#     W_fin, b_fin, X_train, T_conserve, architecure=dimensions
+# )
 
 
 # %%

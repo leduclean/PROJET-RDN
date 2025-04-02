@@ -1,4 +1,4 @@
-#%% Introduction 
+# %% Introduction
 from PIL import Image
 import numpy as np
 from matplotlib.pyplot import imshow, get_cmap
@@ -458,7 +458,7 @@ plt.show()
 
 # %% Question Finale
 
-# 
+#
 # Réponse (à revoir) :
 
 # Dans un réseau de neurones classique, chaque couche est généralement définie par une transformation affine suivie d'une activation :
@@ -471,4 +471,4 @@ plt.show()
 
 # les poids sont directement intégrés sous forme d'un filtre F(i), souvent de taille réduite, comme dans les réseaux convolutionnels.
 # Cela permet de réduire considérablement le nombre total de paramètres du réseau, diminuant ainsi la complexité du modèle et les besoins en mémoire.
-# 
+#
